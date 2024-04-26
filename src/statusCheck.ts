@@ -1,8 +1,8 @@
 import * as git from "isomorphic-git";
 import { promises as fs } from "fs";
 import pm from "picomatch";
-import { structuredPatch } from "diff";
-import type { AnnotationProperties } from "@actions/core";
+import { createPatch } from "diff";
+import { debug, group, type AnnotationProperties } from "@actions/core";
 import { join } from "path";
 
 export interface StatusCheckOptions {
@@ -16,6 +16,13 @@ export interface StatusCheckOptions {
 export async function statusCheck(
   options: StatusCheckOptions
 ): Promise<number> {
+  debug(`Options:
+  sha: ${options.sha}
+  dir: ${options.dir}
+  ignoreNewFiles: ${options.ignoreNewFiles}
+  allowedChanges:
+    ${options.allowedChanges.join("\n    ")}`);
+
   const isAllowed = pm(options.allowedChanges);
   const status = await git.statusMatrix({
     fs,
@@ -45,39 +52,48 @@ export async function statusCheck(
     if (options.ignoreNewFiles && head === 0) {
       continue;
     }
+    const getOld = async () => {
+      const originalBlob = await git.readBlob({
+        fs,
+        dir: options.dir,
+        oid: options.sha,
+        filepath: path,
+      });
+      return new TextDecoder().decode(originalBlob.blob);
+    };
+    const getNew = async () => {
+      return fs.readFile(join(options.dir, path), "utf-8");
+    };
     const modification = getModification(head, work, stage);
     switch (modification) {
       case "added":
-        const newContent = await fs.readFile(join(options.dir, path), "utf-8");
-        options.alert(codeFence(newContent), {
-          file: path,
-          title: `Unexpected new file: ${path}`,
+        await group(`A ${path}`, async () => {
+          const newContent = await getNew();
+          options.alert("File added:\n" + newContent, {
+            file: path,
+            title: `Unexpected file added`,
+          });
         });
         break;
       case "deleted":
-        options.alert("This file has been deleted", {
-          file: path,
-          title: `Unexpected file deletion: ${path}`,
+        await group(`D ${path}`, async () => {
+          const oldFile = await getOld();
+          options.alert("File deleted:\n" + oldFile, {
+            file: path,
+            title: `Unexpected file deleted`,
+          });
         });
         break;
       case "modified":
-        const originalBlob = await git.readBlob({
-          fs,
-          dir: options.dir,
-          oid: options.sha,
-          filepath: path,
-        });
-        const original = new TextDecoder().decode(originalBlob.blob);
-        const modified = await fs.readFile(join(options.dir, path), "utf-8");
-        const diff = structuredPatch(path, path, original, modified);
-        for (const hunk of diff.hunks) {
-          options.alert(codeFence(hunk.lines.join("\n"), "diff"), {
+        await group(`M ${path}`, async () => {
+          const original = await getOld();
+          const modified = await getNew();
+          const patch = createPatch(path, original, modified);
+          options.alert("File modified:\n" + trimPatchHeader(patch), {
             file: path,
-            startLine: hunk.oldStart,
-            endLine: hunk.oldStart + hunk.oldLines,
-            title: `Unexpected change: ${path}`,
+            title: `Unexpected file modified`,
           });
-        }
+        });
         break;
     }
     unexpectedChangesCount++;
@@ -85,8 +101,8 @@ export async function statusCheck(
   return unexpectedChangesCount;
 }
 
-function codeFence(code: string, format?: string): string {
-  return "```" + (format ?? "") + "\n" + code + "\n```";
+function trimPatchHeader(patch: string) {
+  return patch.split("\n").slice(4).join("\n");
 }
 
 function getModification(head: 0 | 1, work: 0 | 1 | 2, stage: 0 | 1 | 2 | 3) {

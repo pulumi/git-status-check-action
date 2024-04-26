@@ -43210,14 +43210,17 @@ var git = __importStar(__nccwpck_require__(5114));
 var fs_1 = __nccwpck_require__(7147);
 var picomatch_1 = __importDefault(__nccwpck_require__(8569));
 var diff_1 = __nccwpck_require__(1672);
+var core_1 = __nccwpck_require__(2186);
 var path_1 = __nccwpck_require__(1017);
 function statusCheck(options) {
     return __awaiter(this, void 0, void 0, function () {
-        var isAllowed, status, unexpectedChangesCount, status_1, status_1_1, _a, path, head, work, stage, modification, _b, newContent, originalBlob, original, modified, diff, _c, _d, hunk, e_1_1;
-        var e_1, _e, e_2, _f;
-        return __generator(this, function (_g) {
-            switch (_g.label) {
+        var isAllowed, status, unexpectedChangesCount, _loop_1, status_1, status_1_1, _a, path, head, work, stage, e_1_1;
+        var e_1, _b;
+        var _this = this;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
                 case 0:
+                    (0, core_1.debug)("Options:\n  sha: ".concat(options.sha, "\n  dir: ").concat(options.dir, "\n  ignoreNewFiles: ").concat(options.ignoreNewFiles, "\n  allowedChanges:\n    ").concat(options.allowedChanges.join("\n    ")));
                     isAllowed = (0, picomatch_1.default)(options.allowedChanges);
                     return [4 /*yield*/, git.statusMatrix({
                             fs: fs_1.promises,
@@ -43229,101 +43232,146 @@ function statusCheck(options) {
                             },
                         })];
                 case 1:
-                    status = _g.sent();
+                    status = _c.sent();
                     unexpectedChangesCount = 0;
-                    _g.label = 2;
+                    _loop_1 = function (path, head, work, stage) {
+                        var getOld, getNew, modification, _d;
+                        return __generator(this, function (_e) {
+                            switch (_e.label) {
+                                case 0:
+                                    if (head === 1 && work === 1 && stage === 1) {
+                                        return [2 /*return*/, "continue"];
+                                    }
+                                    if (options.ignoreNewFiles && head === 0) {
+                                        return [2 /*return*/, "continue"];
+                                    }
+                                    getOld = function () { return __awaiter(_this, void 0, void 0, function () {
+                                        var originalBlob;
+                                        return __generator(this, function (_a) {
+                                            switch (_a.label) {
+                                                case 0: return [4 /*yield*/, git.readBlob({
+                                                        fs: fs_1.promises,
+                                                        dir: options.dir,
+                                                        oid: options.sha,
+                                                        filepath: path,
+                                                    })];
+                                                case 1:
+                                                    originalBlob = _a.sent();
+                                                    return [2 /*return*/, new TextDecoder().decode(originalBlob.blob)];
+                                            }
+                                        });
+                                    }); };
+                                    getNew = function () { return __awaiter(_this, void 0, void 0, function () {
+                                        return __generator(this, function (_a) {
+                                            return [2 /*return*/, fs_1.promises.readFile((0, path_1.join)(options.dir, path), "utf-8")];
+                                        });
+                                    }); };
+                                    modification = getModification(head, work, stage);
+                                    _d = modification;
+                                    switch (_d) {
+                                        case "added": return [3 /*break*/, 1];
+                                        case "deleted": return [3 /*break*/, 3];
+                                        case "modified": return [3 /*break*/, 5];
+                                    }
+                                    return [3 /*break*/, 7];
+                                case 1: return [4 /*yield*/, (0, core_1.group)("A ".concat(path), function () { return __awaiter(_this, void 0, void 0, function () {
+                                        var newContent;
+                                        return __generator(this, function (_a) {
+                                            switch (_a.label) {
+                                                case 0: return [4 /*yield*/, getNew()];
+                                                case 1:
+                                                    newContent = _a.sent();
+                                                    options.alert("File added:\n" + newContent, {
+                                                        file: path,
+                                                        title: "Unexpected file added",
+                                                    });
+                                                    return [2 /*return*/];
+                                            }
+                                        });
+                                    }); })];
+                                case 2:
+                                    _e.sent();
+                                    return [3 /*break*/, 7];
+                                case 3: return [4 /*yield*/, (0, core_1.group)("D ".concat(path), function () { return __awaiter(_this, void 0, void 0, function () {
+                                        var oldFile;
+                                        return __generator(this, function (_a) {
+                                            switch (_a.label) {
+                                                case 0: return [4 /*yield*/, getOld()];
+                                                case 1:
+                                                    oldFile = _a.sent();
+                                                    options.alert("File deleted:\n" + oldFile, {
+                                                        file: path,
+                                                        title: "Unexpected file deleted",
+                                                    });
+                                                    return [2 /*return*/];
+                                            }
+                                        });
+                                    }); })];
+                                case 4:
+                                    _e.sent();
+                                    return [3 /*break*/, 7];
+                                case 5: return [4 /*yield*/, (0, core_1.group)("M ".concat(path), function () { return __awaiter(_this, void 0, void 0, function () {
+                                        var original, modified, patch;
+                                        return __generator(this, function (_a) {
+                                            switch (_a.label) {
+                                                case 0: return [4 /*yield*/, getOld()];
+                                                case 1:
+                                                    original = _a.sent();
+                                                    return [4 /*yield*/, getNew()];
+                                                case 2:
+                                                    modified = _a.sent();
+                                                    patch = (0, diff_1.createPatch)(path, original, modified);
+                                                    options.alert("File modified:\n" + trimPatchHeader(patch), {
+                                                        file: path,
+                                                        title: "Unexpected file modified",
+                                                    });
+                                                    return [2 /*return*/];
+                                            }
+                                        });
+                                    }); })];
+                                case 6:
+                                    _e.sent();
+                                    return [3 /*break*/, 7];
+                                case 7:
+                                    unexpectedChangesCount++;
+                                    return [2 /*return*/];
+                            }
+                        });
+                    };
+                    _c.label = 2;
                 case 2:
-                    _g.trys.push([2, 13, 14, 15]);
+                    _c.trys.push([2, 7, 8, 9]);
                     status_1 = __values(status), status_1_1 = status_1.next();
-                    _g.label = 3;
+                    _c.label = 3;
                 case 3:
-                    if (!!status_1_1.done) return [3 /*break*/, 12];
+                    if (!!status_1_1.done) return [3 /*break*/, 6];
                     _a = __read(status_1_1.value, 4), path = _a[0], head = _a[1], work = _a[2], stage = _a[3];
-                    if (head === 1 && work === 1 && stage === 1) {
-                        return [3 /*break*/, 11]; // Unmodified
-                    }
-                    if (options.ignoreNewFiles && head === 0) {
-                        return [3 /*break*/, 11];
-                    }
-                    modification = getModification(head, work, stage);
-                    _b = modification;
-                    switch (_b) {
-                        case "added": return [3 /*break*/, 4];
-                        case "deleted": return [3 /*break*/, 6];
-                        case "modified": return [3 /*break*/, 7];
-                    }
-                    return [3 /*break*/, 10];
-                case 4: return [4 /*yield*/, fs_1.promises.readFile((0, path_1.join)(options.dir, path), "utf-8")];
+                    return [5 /*yield**/, _loop_1(path, head, work, stage)];
+                case 4:
+                    _c.sent();
+                    _c.label = 5;
                 case 5:
-                    newContent = _g.sent();
-                    options.alert(codeFence(newContent), {
-                        file: path,
-                        title: "Unexpected new file: ".concat(path),
-                    });
-                    return [3 /*break*/, 10];
-                case 6:
-                    options.alert("This file has been deleted", {
-                        file: path,
-                        title: "Unexpected file deletion: ".concat(path),
-                    });
-                    return [3 /*break*/, 10];
-                case 7: return [4 /*yield*/, git.readBlob({
-                        fs: fs_1.promises,
-                        dir: options.dir,
-                        oid: options.sha,
-                        filepath: path,
-                    })];
-                case 8:
-                    originalBlob = _g.sent();
-                    original = new TextDecoder().decode(originalBlob.blob);
-                    return [4 /*yield*/, fs_1.promises.readFile((0, path_1.join)(options.dir, path), "utf-8")];
-                case 9:
-                    modified = _g.sent();
-                    diff = (0, diff_1.structuredPatch)(path, path, original, modified);
-                    try {
-                        for (_c = (e_2 = void 0, __values(diff.hunks)), _d = _c.next(); !_d.done; _d = _c.next()) {
-                            hunk = _d.value;
-                            options.alert(codeFence(hunk.lines.join("\n"), "diff"), {
-                                file: path,
-                                startLine: hunk.oldStart,
-                                endLine: hunk.oldStart + hunk.oldLines,
-                                title: "Unexpected change: ".concat(path),
-                            });
-                        }
-                    }
-                    catch (e_2_1) { e_2 = { error: e_2_1 }; }
-                    finally {
-                        try {
-                            if (_d && !_d.done && (_f = _c.return)) _f.call(_c);
-                        }
-                        finally { if (e_2) throw e_2.error; }
-                    }
-                    return [3 /*break*/, 10];
-                case 10:
-                    unexpectedChangesCount++;
-                    _g.label = 11;
-                case 11:
                     status_1_1 = status_1.next();
                     return [3 /*break*/, 3];
-                case 12: return [3 /*break*/, 15];
-                case 13:
-                    e_1_1 = _g.sent();
+                case 6: return [3 /*break*/, 9];
+                case 7:
+                    e_1_1 = _c.sent();
                     e_1 = { error: e_1_1 };
-                    return [3 /*break*/, 15];
-                case 14:
+                    return [3 /*break*/, 9];
+                case 8:
                     try {
-                        if (status_1_1 && !status_1_1.done && (_e = status_1.return)) _e.call(status_1);
+                        if (status_1_1 && !status_1_1.done && (_b = status_1.return)) _b.call(status_1);
                     }
                     finally { if (e_1) throw e_1.error; }
                     return [7 /*endfinally*/];
-                case 15: return [2 /*return*/, unexpectedChangesCount];
+                case 9: return [2 /*return*/, unexpectedChangesCount];
             }
         });
     });
 }
 exports.statusCheck = statusCheck;
-function codeFence(code, format) {
-    return "```" + (format !== null && format !== void 0 ? format : "") + "\n" + code + "\n```";
+function trimPatchHeader(patch) {
+    return patch.split("\n").slice(4).join("\n");
 }
 function getModification(head, work, stage) {
     if (head === 0) {
