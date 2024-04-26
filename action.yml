@@ -1,0 +1,23 @@
+name: 'Git Status Check'
+description: 'Checks the git status for unexpected changes'
+inputs:
+  allowed-changes:
+    required: false
+    description: Globs for files we expect might have valid changes, separated with newlines.
+  dir:
+    description: Directory to check git status of
+    required: false
+    default: "."
+  ignore-new-files:
+    required: false
+    description: Only check for updated or deleted files.
+  continue-with-unexpected-changes:
+    required: false
+    default: "false"
+    description: Report changes as warnings rather than errors and continue.
+outputs:
+  unexpected-changes-count:
+    description: 'The number of unexpected change'
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

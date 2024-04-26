@@ -1,0 +1,39 @@
+name: Self-test
+on:
+  workflow_dispatch: {}
+  pull_request: {}
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+      # Check the build didn't result in any changes
+      - uses: ./
+
+  test-reporting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: echo "Modification" >> README.md
+      - run: rm tslint.json
+      - run: touch new-file.txt
+
+      - uses: ./
+        id: git-status
+        with:
+          continue-with-unexpected-changes: true
+
+      - if: steps.git-status.outputs.unexpected-changes-count != '3'
+        run: |
+          echo "Unexpected change count: ${{ steps.git-status.outputs.unexpected-changes-count }}"
+          git status
+          exit 1
