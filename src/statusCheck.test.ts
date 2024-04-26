@@ -50,13 +50,10 @@ describe("diffing", () => {
       alert,
     });
     expect(unexpectedChangesCount).toBe(1);
-    expect(alert).toHaveBeenCalledWith(
-      "Added file content:\n" + newFileContent,
-      {
-        file: "b.txt",
-        title: "Unexpected file added",
-      }
-    );
+    expect(alert).toHaveBeenCalledWith("File added:\n\n" + newFileContent, {
+      file: "b.txt",
+      title: "Unexpected file added",
+    });
   });
   test("deleted file", async () => {
     const alert = jest.fn();
@@ -70,13 +67,10 @@ describe("diffing", () => {
       alert,
     });
     expect(unexpectedChangesCount).toBe(1);
-    expect(alert).toHaveBeenCalledWith(
-      "Deleted file content:\n" + originalContent,
-      {
-        file: "a.txt",
-        title: "Unexpected file deleted",
-      }
-    );
+    expect(alert).toHaveBeenCalledWith("File deleted:\n\n" + originalContent, {
+      file: "a.txt",
+      title: "Unexpected file deleted",
+    });
   });
   test("modified file", async () => {
     const alert = jest.fn();
@@ -90,7 +84,8 @@ describe("diffing", () => {
       alert,
     });
     expect(unexpectedChangesCount).toBe(1);
-    const expectedPatch = `Modified file diff:
+    const expectedPatch = `File modified:
+
 Index: a.txt
 ===================================================================
 --- a.txt

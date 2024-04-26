@@ -67,29 +67,29 @@ export async function statusCheck(
     const modification = getModification(head, work, stage);
     switch (modification) {
       case "added":
-        await group(`${path} --- file added`, async () => {
+        await group(`A ${path}`, async () => {
           const newContent = await getNew();
-          options.alert("Added file content:\n" + newContent, {
+          options.alert("File added:\n\n" + newContent, {
             file: path,
             title: `Unexpected file added`,
           });
         });
         break;
       case "deleted":
-        await group(`${path} --- file deleted`, async () => {
+        await group(`D ${path}`, async () => {
           const oldFile = await getOld();
-          options.alert("Deleted file content:\n" + oldFile, {
+          options.alert("File deleted:\n\n" + oldFile, {
             file: path,
             title: `Unexpected file deleted`,
           });
         });
         break;
       case "modified":
-        await group(`${path} --- file modified`, async () => {
+        await group(`M ${path}`, async () => {
           const original = await getOld();
           const modified = await getNew();
           const patch = createPatch(path, original, modified);
-          options.alert("Modified file diff:\n" + patch, {
+          options.alert("File modified:\n\n" + patch, {
             file: path,
             title: `Unexpected file modified`,
           });

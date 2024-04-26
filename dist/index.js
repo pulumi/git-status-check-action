@@ -43274,14 +43274,14 @@ function statusCheck(options) {
                                         case "modified": return [3 /*break*/, 5];
                                     }
                                     return [3 /*break*/, 7];
-                                case 1: return [4 /*yield*/, (0, core_1.group)("".concat(path, " --- file added"), function () { return __awaiter(_this, void 0, void 0, function () {
+                                case 1: return [4 /*yield*/, (0, core_1.group)("A ".concat(path), function () { return __awaiter(_this, void 0, void 0, function () {
                                         var newContent;
                                         return __generator(this, function (_a) {
                                             switch (_a.label) {
                                                 case 0: return [4 /*yield*/, getNew()];
                                                 case 1:
                                                     newContent = _a.sent();
-                                                    options.alert("Added file content:\n" + newContent, {
+                                                    options.alert("File added:\n\n" + newContent, {
                                                         file: path,
                                                         title: "Unexpected file added",
                                                     });
@@ -43292,14 +43292,14 @@ function statusCheck(options) {
                                 case 2:
                                     _e.sent();
                                     return [3 /*break*/, 7];
-                                case 3: return [4 /*yield*/, (0, core_1.group)("".concat(path, " --- file deleted"), function () { return __awaiter(_this, void 0, void 0, function () {
+                                case 3: return [4 /*yield*/, (0, core_1.group)("D ".concat(path), function () { return __awaiter(_this, void 0, void 0, function () {
                                         var oldFile;
                                         return __generator(this, function (_a) {
                                             switch (_a.label) {
                                                 case 0: return [4 /*yield*/, getOld()];
                                                 case 1:
                                                     oldFile = _a.sent();
-                                                    options.alert("Deleted file content:\n" + oldFile, {
+                                                    options.alert("File deleted:\n\n" + oldFile, {
                                                         file: path,
                                                         title: "Unexpected file deleted",
                                                     });
@@ -43310,7 +43310,7 @@ function statusCheck(options) {
                                 case 4:
                                     _e.sent();
                                     return [3 /*break*/, 7];
-                                case 5: return [4 /*yield*/, (0, core_1.group)("".concat(path, " --- file modified"), function () { return __awaiter(_this, void 0, void 0, function () {
+                                case 5: return [4 /*yield*/, (0, core_1.group)("M ".concat(path), function () { return __awaiter(_this, void 0, void 0, function () {
                                         var original, modified, patch;
                                         return __generator(this, function (_a) {
                                             switch (_a.label) {
@@ -43321,7 +43321,7 @@ function statusCheck(options) {
                                                 case 2:
                                                     modified = _a.sent();
                                                     patch = (0, diff_1.createPatch)(path, original, modified);
-                                                    options.alert("Modified file diff:\n" + patch, {
+                                                    options.alert("File modified:\n\n" + patch, {
                                                         file: path,
                                                         title: "Unexpected file modified",
                                                     });
