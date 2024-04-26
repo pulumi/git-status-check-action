@@ -17,6 +17,7 @@ jobs:
 
       # Check the build didn't result in any changes
       - uses: ./
+        name: Run git-status-check locally
 
   test-reporting:
     runs-on: ubuntu-latest
@@ -28,6 +29,7 @@ jobs:
       - run: touch new-file.txt
 
       - uses: ./
+        name: Run git-status-check locally
         id: git-status
         with:
           continue-with-unexpected-changes: true
