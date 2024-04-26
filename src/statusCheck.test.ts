@@ -4,12 +4,13 @@ import * as git from "isomorphic-git";
 
 describe("diffing", () => {
   beforeAll(async () => fs.mkdir(".temp", { recursive: true }));
+  const originalContent = "Line 1\nLine 2\nLine 3\n";
   let tempDir: string;
   let sha: string;
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(".temp/git-status-check-test-");
     await git.init({ fs, dir: tempDir });
-    await fs.writeFile(`${tempDir}/a.txt`, "Line 1\nLine 2\nLine 3\n", "utf-8");
+    await fs.writeFile(`${tempDir}/a.txt`, originalContent, "utf-8");
     await fs.writeFile(`${tempDir}/.gitignore`, "ignored.txt\n");
     await git.add({ fs, dir: tempDir, filepath: ["a.txt", ".gitignore"] });
     const commitOp = await git.commit({
@@ -38,7 +39,8 @@ describe("diffing", () => {
   });
   test("new file", async () => {
     const alert = jest.fn();
-    await fs.writeFile(`${tempDir}/b.txt`, "Extra file");
+    const newFileContent = "Extra file";
+    await fs.writeFile(`${tempDir}/b.txt`, newFileContent);
     // Run statusCheck
     const unexpectedChangesCount = await statusCheck({
       sha,
@@ -48,9 +50,9 @@ describe("diffing", () => {
       alert,
     });
     expect(unexpectedChangesCount).toBe(1);
-    expect(alert).toHaveBeenCalledWith("```\nExtra file\n```", {
+    expect(alert).toHaveBeenCalledWith(newFileContent, {
       file: "b.txt",
-      title: "Unexpected new file: b.txt",
+      title: "Unexpected file added",
     });
   });
   test("deleted file", async () => {
@@ -65,9 +67,9 @@ describe("diffing", () => {
       alert,
     });
     expect(unexpectedChangesCount).toBe(1);
-    expect(alert).toHaveBeenCalledWith("This file has been deleted", {
+    expect(alert).toHaveBeenCalledWith(originalContent, {
       file: "a.txt",
-      title: "Unexpected file deletion: a.txt",
+      title: "Unexpected file deleted",
     });
   });
   test("modified file", async () => {
@@ -82,15 +84,19 @@ describe("diffing", () => {
       alert,
     });
     expect(unexpectedChangesCount).toBe(1);
-    expect(alert).toHaveBeenCalledWith(
-      "```diff\n Line 1\n-Line 2\n Line 3\n```",
-      {
-        file: "a.txt",
-        title: "Unexpected change: a.txt",
-        startLine: 1,
-        endLine: 4,
-      }
-    );
+    const expectedPatch = `Index: a.txt
+===================================================================
+--- a.txt
++++ a.txt
+@@ -1,3 +1,2 @@
+ Line 1
+-Line 2
+ Line 3
+`;
+    expect(alert).toHaveBeenCalledWith(expectedPatch, {
+      file: "a.txt",
+      title: "Unexpected file modified",
+    });
   });
   test("adheres to .gitignore", async () => {
     const alert = jest.fn();
