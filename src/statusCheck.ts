@@ -69,7 +69,7 @@ export async function statusCheck(
       case "added":
         await group(`${path} --- file added`, async () => {
           const newContent = await getNew();
-          options.alert(newContent, {
+          options.alert("Added file content:\n" + newContent, {
             file: path,
             title: `Unexpected file added`,
           });
@@ -78,7 +78,7 @@ export async function statusCheck(
       case "deleted":
         await group(`${path} --- file deleted`, async () => {
           const oldFile = await getOld();
-          options.alert(oldFile, {
+          options.alert("Deleted file content:\n" + oldFile, {
             file: path,
             title: `Unexpected file deleted`,
           });
@@ -89,7 +89,7 @@ export async function statusCheck(
           const original = await getOld();
           const modified = await getNew();
           const patch = createPatch(path, original, modified);
-          options.alert(patch, {
+          options.alert("Modified file diff:\n" + patch, {
             file: path,
             title: `Unexpected file modified`,
           });

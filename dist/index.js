@@ -43281,7 +43281,7 @@ function statusCheck(options) {
                                                 case 0: return [4 /*yield*/, getNew()];
                                                 case 1:
                                                     newContent = _a.sent();
-                                                    options.alert(newContent, {
+                                                    options.alert("Added file content:\n" + newContent, {
                                                         file: path,
                                                         title: "Unexpected file added",
                                                     });
@@ -43299,7 +43299,7 @@ function statusCheck(options) {
                                                 case 0: return [4 /*yield*/, getOld()];
                                                 case 1:
                                                     oldFile = _a.sent();
-                                                    options.alert(oldFile, {
+                                                    options.alert("Deleted file content:\n" + oldFile, {
                                                         file: path,
                                                         title: "Unexpected file deleted",
                                                     });
@@ -43321,7 +43321,7 @@ function statusCheck(options) {
                                                 case 2:
                                                     modified = _a.sent();
                                                     patch = (0, diff_1.createPatch)(path, original, modified);
-                                                    options.alert(patch, {
+                                                    options.alert("Modified file diff:\n" + patch, {
                                                         file: path,
                                                         title: "Unexpected file modified",
                                                     });
