@@ -50,7 +50,7 @@ describe("diffing", () => {
       alert,
     });
     expect(unexpectedChangesCount).toBe(1);
-    expect(alert).toHaveBeenCalledWith("File added:\n\n" + newFileContent, {
+    expect(alert).toHaveBeenCalledWith("File added:\n" + newFileContent, {
       file: "b.txt",
       title: "Unexpected file added",
     });
@@ -67,7 +67,7 @@ describe("diffing", () => {
       alert,
     });
     expect(unexpectedChangesCount).toBe(1);
-    expect(alert).toHaveBeenCalledWith("File deleted:\n\n" + originalContent, {
+    expect(alert).toHaveBeenCalledWith("File deleted:\n" + originalContent, {
       file: "a.txt",
       title: "Unexpected file deleted",
     });
@@ -85,11 +85,6 @@ describe("diffing", () => {
     });
     expect(unexpectedChangesCount).toBe(1);
     const expectedPatch = `File modified:
-
-Index: a.txt
-===================================================================
---- a.txt
-+++ a.txt
 @@ -1,3 +1,2 @@
  Line 1
 -Line 2

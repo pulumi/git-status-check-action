@@ -69,7 +69,7 @@ export async function statusCheck(
       case "added":
         await group(`A ${path}`, async () => {
           const newContent = await getNew();
-          options.alert("File added:\n\n" + newContent, {
+          options.alert("File added:\n" + newContent, {
             file: path,
             title: `Unexpected file added`,
           });
@@ -78,7 +78,7 @@ export async function statusCheck(
       case "deleted":
         await group(`D ${path}`, async () => {
           const oldFile = await getOld();
-          options.alert("File deleted:\n\n" + oldFile, {
+          options.alert("File deleted:\n" + oldFile, {
             file: path,
             title: `Unexpected file deleted`,
           });
@@ -89,7 +89,7 @@ export async function statusCheck(
           const original = await getOld();
           const modified = await getNew();
           const patch = createPatch(path, original, modified);
-          options.alert("File modified:\n\n" + patch, {
+          options.alert("File modified:\n" + trimPatchHeader(patch), {
             file: path,
             title: `Unexpected file modified`,
           });
@@ -101,8 +101,8 @@ export async function statusCheck(
   return unexpectedChangesCount;
 }
 
-function codeFence(code: string, format?: string): string {
-  return "```" + (format ?? "") + "\n" + code + "\n```";
+function trimPatchHeader(patch: string) {
+  return patch.split("\n").slice(4).join("\n");
 }
 
 function getModification(head: 0 | 1, work: 0 | 1 | 2, stage: 0 | 1 | 2 | 3) {

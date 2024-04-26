@@ -43281,7 +43281,7 @@ function statusCheck(options) {
                                                 case 0: return [4 /*yield*/, getNew()];
                                                 case 1:
                                                     newContent = _a.sent();
-                                                    options.alert("File added:\n\n" + newContent, {
+                                                    options.alert("File added:\n" + newContent, {
                                                         file: path,
                                                         title: "Unexpected file added",
                                                     });
@@ -43299,7 +43299,7 @@ function statusCheck(options) {
                                                 case 0: return [4 /*yield*/, getOld()];
                                                 case 1:
                                                     oldFile = _a.sent();
-                                                    options.alert("File deleted:\n\n" + oldFile, {
+                                                    options.alert("File deleted:\n" + oldFile, {
                                                         file: path,
                                                         title: "Unexpected file deleted",
                                                     });
@@ -43321,7 +43321,7 @@ function statusCheck(options) {
                                                 case 2:
                                                     modified = _a.sent();
                                                     patch = (0, diff_1.createPatch)(path, original, modified);
-                                                    options.alert("File modified:\n\n" + patch, {
+                                                    options.alert("File modified:\n" + trimPatchHeader(patch), {
                                                         file: path,
                                                         title: "Unexpected file modified",
                                                     });
@@ -43370,8 +43370,8 @@ function statusCheck(options) {
     });
 }
 exports.statusCheck = statusCheck;
-function codeFence(code, format) {
-    return "```" + (format !== null && format !== void 0 ? format : "") + "\n" + code + "\n```";
+function trimPatchHeader(patch) {
+    return patch.split("\n").slice(4).join("\n");
 }
 function getModification(head, work, stage) {
     if (head === 0) {
