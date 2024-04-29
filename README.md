@@ -42,7 +42,7 @@ Fails if any files are modified, deleted or added (adhering to the .gitignore)
 ```yaml
 steps:
 - uses: actions/checkout@v4
-- uses: pulumi/git-status-check@v1
+- uses: pulumi/git-status-check-action@v1
 ```
 
 ### Fail Only On Deleted Or Modified Files
@@ -52,7 +52,7 @@ Ignore added files:
 ```yaml
 steps:
 - uses: actions/checkout@v4
-- uses: pulumi/git-status-check@v1
+- uses: pulumi/git-status-check-action@v1
   with:
     ignore-new-files: true
 ```
@@ -65,7 +65,7 @@ This action expects a change to be made to a specific file, but will fail if any
 steps:
 - uses: actions/checkout@v4
 - run: echo "Some expected update" >> CHANGELOG.md
-- uses: pulumi/git-status-check@v1
+- uses: pulumi/git-status-check-action@v1
   with:
     allowed-changes: |
       CHANGELOG.md
@@ -80,7 +80,7 @@ steps:
 - uses: actions/checkout@v4
   with:
     path: custom-dir
-- uses: pulumi/git-status-check@v1
+- uses: pulumi/git-status-check-action@v1
   with:
     dir: custom-dir
 ```
@@ -93,7 +93,7 @@ Print warnings for unexpected errors but don't fail the build. The result of the
 steps:
 - uses: actions/checkout@v4
 - id: git-status
-  uses: pulumi/git-status-check@v1
+  uses: pulumi/git-status-check-action@v1
   with:
     continue-with-unexpected-changes: true
 - run: |
