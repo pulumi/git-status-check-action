@@ -1,9 +1,13 @@
-import * as git from "isomorphic-git";
 import { promises as fs } from "fs";
 import pm from "picomatch";
-import { createPatch } from "diff";
-import { debug, group, type AnnotationProperties } from "@actions/core";
+import {
+  debug,
+  group,
+  warning,
+  type AnnotationProperties,
+} from "@actions/core";
 import { join } from "path";
+import { exec } from "shelljs";
 
 export interface StatusCheckOptions {
   sha: string;
@@ -24,96 +28,132 @@ export async function statusCheck(
     ${options.allowedChanges.join("\n    ")}`);
 
   const isAllowed = pm(options.allowedChanges);
-  const status = await git.statusMatrix({
-    fs,
-    dir: options.dir,
-    filter: (path) => {
-      if (isAllowed(path)) return false;
-      return true;
-    },
-  });
+  const gitStatus = exec("git status --porcelain", { cwd: options.dir });
 
   let unexpectedChangesCount = 0;
-  // ["a.txt", 0, 2, 0], // new, untracked
-  // ["b.txt", 0, 2, 2], // added, staged
-  // ["c.txt", 0, 2, 3], // added, staged, with unstaged changes
-  // ["d.txt", 1, 1, 1], // unmodified
-  // ["e.txt", 1, 2, 1], // modified, unstaged
-  // ["f.txt", 1, 2, 2], // modified, staged
-  // ["g.txt", 1, 2, 3], // modified, staged, with unstaged changes
-  // ["h.txt", 1, 0, 1], // deleted, unstaged
-  // ["i.txt", 1, 0, 0], // deleted, staged
-  // ["j.txt", 1, 2, 0], // deleted, staged, with unstaged-modified changes (new file of the same name)
-  // ["k.txt", 1, 1, 0], // deleted, staged, with unstaged changes (new file of the same name)
-  for (const [path, head, work, stage] of status) {
-    if (head === 1 && work === 1 && stage === 1) {
-      continue; // Unmodified
-    }
-    if (options.ignoreNewFiles && head === 0) {
+  /* | HEAD | WORKDIR | STAGE | `git status --short` equivalent |
+   * | ---- | ------- | ----- | ------------------------------- |
+   * | 0    | 0       | 0     | ``                              |
+   * | 0    | 0       | 3     | `AD`                            |
+   * | 0    | 2       | 0     | `??`                            |
+   * | 0    | 2       | 2     | `A `                            |
+   * | 0    | 2       | 3     | `AM`                            |
+   * | 1    | 0       | 0     | `D `                            |
+   * | 1    | 0       | 1     | ` D`                            |
+   * | 1    | 0       | 3     | `MD`                            |
+   * | 1    | 1       | 0     | `D ` + `??`                     |
+   * | 1    | 1       | 1     | ``                              |
+   * | 1    | 1       | 3     | `MM`                            |
+   * | 1    | 2       | 0     | `D ` + `??`                     |
+   * | 1    | 2       | 1     | ` M`                            |
+   * | 1    | 2       | 2     | `M `                            |
+   * | 1    | 2       | 3     | `MM`                            |
+   */
+  const getOld = (path: string) => {
+    return exec(`git show ${options.sha}:"${path}"`, { cwd: options.dir })
+      .stdout;
+  };
+  const getNew = async (path: string) => {
+    return fs.readFile(join(options.dir, path), "utf-8");
+  };
+  const getDiff = (path: string) => {
+    return exec(`git diff --no-ext-diff -p "${path}"`, { cwd: options.dir })
+      .stdout;
+  };
+  const statusLines = gitStatus.stdout.split("\n");
+  for (const statusLine of statusLines) {
+    const parsed = parseStatusLine(statusLine);
+    if (parsed === undefined) {
       continue;
     }
-    const getOld = async () => {
-      const originalBlob = await git.readBlob({
-        fs,
-        dir: options.dir,
-        oid: options.sha,
-        filepath: path,
-      });
-      return new TextDecoder().decode(originalBlob.blob);
-    };
-    const getNew = async () => {
-      return fs.readFile(join(options.dir, path), "utf-8");
-    };
-    const modification = getModification(head, work, stage);
-    switch (modification) {
-      case "added":
-        await group(`A ${path}`, async () => {
-          const newContent = await getNew();
+    const { path, status } = parsed;
+    if (isAllowed(path)) {
+      continue;
+    }
+    const modification = getModification(status);
+    if (modification === "added" && options.ignoreNewFiles) {
+      continue;
+    }
+    if (modification === undefined) {
+      warning(`unhandled status: ${statusLine}`);
+      continue;
+    }
+    await group(statusLine, async () => {
+      switch (modification) {
+        case "added":
+          const newContent = await getNew(path);
           options.alert("File added:\n" + newContent, {
             file: path,
             title: `Unexpected file added`,
           });
-        });
-        break;
-      case "deleted":
-        await group(`D ${path}`, async () => {
-          const oldFile = await getOld();
+          break;
+        case "deleted":
+          // Deleted
+          const oldFile = getOld(path);
           options.alert("File deleted:\n" + oldFile, {
             file: path,
             title: `Unexpected file deleted`,
           });
-        });
-        break;
-      case "modified":
-        await group(`M ${path}`, async () => {
-          const original = await getOld();
-          const modified = await getNew();
-          const patch = createPatch(path, original, modified);
-          options.alert("File modified:\n" + trimPatchHeader(patch), {
+          break;
+        case "modified":
+          // Modified
+          const diff = getDiff(path);
+          options.alert("File modified:\n" + trimPatchHeader(diff), {
             file: path,
             title: `Unexpected file modified`,
           });
-        });
-        break;
-    }
-    unexpectedChangesCount++;
+          break;
+      }
+      unexpectedChangesCount++;
+    });
   }
   return unexpectedChangesCount;
 }
 
-function trimPatchHeader(patch: string) {
-  return patch.split("\n").slice(4).join("\n");
+const statusPattern = new RegExp(/(\S+)\s+(.*)/);
+function parseStatusLine(
+  line: string
+): { status: string; path: string } | undefined {
+  const match = statusPattern.exec(line);
+  if (match === null) {
+    return undefined;
+  }
+  const status = match[1];
+  let path = match[2];
+  if (path.startsWith('"') && path.endsWith('"')) {
+    path = path.substring(1, path.length - 2);
+  }
+  return { path, status: status.trim() };
 }
 
-function getModification(head: 0 | 1, work: 0 | 1 | 2, stage: 0 | 1 | 2 | 3) {
-  if (head === 0) {
-    return "added";
+function trimPatchHeader(patch: string) {
+  return patch
+    .split("\n")
+    .filter((l) => !isHeader(l))
+    .join("\n");
+}
+
+function isHeader(line: string) {
+  return (
+    line.startsWith("diff ") ||
+    line.startsWith("index ") ||
+    line.startsWith("--- ") ||
+    line.startsWith("+++ ")
+  );
+}
+
+function getModification(status: string) {
+  switch (status) {
+    case "AD":
+    case "??":
+    case "A":
+      return "added";
+    case "D":
+      return "deleted";
+    case "M":
+    case "MM":
+      return "modified";
+    default:
+      return;
   }
-  if (work === 2) {
-    return "modified";
-  }
-  if (work === 0 || stage === 0) {
-    return "deleted";
-  }
-  return "unmodified";
 }

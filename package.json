@@ -17,6 +17,7 @@
     "@babel/preset-typescript": "^7.24.1",
     "@types/diff": "^5.2.0",
     "@types/jest": "^29.5.12",
+    "@types/shelljs": "^0.8.15",
     "@types/picomatch": "^2.3.3",
     "@vercel/ncc": "^0.38.1",
     "babel-jest": "^29.7.0",
@@ -29,7 +30,8 @@
     "@actions/github": "^6.0.0",
     "diff": "^5.2.0",
     "isomorphic-git": "^1.25.7",
-    "picomatch": "^4.0.2"
+    "picomatch": "^4.0.2",
+    "shelljs": "^0.8.5"
   },
   "files": [
     "./bin/*",
