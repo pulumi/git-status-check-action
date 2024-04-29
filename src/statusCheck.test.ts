@@ -74,7 +74,8 @@ describe("diffing", () => {
   });
   test("modified file", async () => {
     const alert = jest.fn();
-    await fs.writeFile(`${tempDir}/a.txt`, "Line 1\nLine 3\n", "utf-8");
+    await wait1SecondForNewTimestamp();
+    await fs.writeFile(`${tempDir}/a.txt`, "Line 1\nLine 3\nLine 4\n", "utf-8");
     // Run statusCheck
     const unexpectedChangesCount = await statusCheck({
       sha,
@@ -85,10 +86,11 @@ describe("diffing", () => {
     });
     expect(unexpectedChangesCount).toBe(1);
     const expectedPatch = `File modified:
-@@ -1,3 +1,2 @@
+@@ -1,3 +1,3 @@
  Line 1
 -Line 2
  Line 3
++Line 4
 `;
     expect(alert).toHaveBeenCalledWith(expectedPatch, {
       file: "a.txt",
@@ -111,6 +113,7 @@ describe("diffing", () => {
   });
   test("allowed changes", async () => {
     const alert = jest.fn();
+    await wait1SecondForNewTimestamp();
     await fs.writeFile(`${tempDir}/a.txt`, "Line 1\nLine 3\n", "utf-8");
     await fs.writeFile(`${tempDir}/a.new`, "New file", "utf-8");
     // Run statusCheck
@@ -125,3 +128,7 @@ describe("diffing", () => {
     expect(alert).not.toHaveBeenCalled();
   });
 });
+
+async function wait1SecondForNewTimestamp() {
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+}

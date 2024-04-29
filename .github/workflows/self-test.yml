@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - run: echo "Modification" >> README.md
+      - run: echo "Rewritten readme file" > README.md
       - run: rm tslint.json
       - run: touch new-file.txt
 
