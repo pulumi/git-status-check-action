@@ -38665,19 +38665,19 @@ var path_1 = __nccwpck_require__(1017);
 var shelljs_1 = __nccwpck_require__(3516);
 function statusCheck(options) {
     return __awaiter(this, void 0, void 0, function () {
-        var isAllowed, gitStatus, unexpectedChangesCount, getOld, getNew, getDiff, statusLines, _loop_1, statusLines_1, statusLines_1_1, statusLine, e_1_1;
+        var execOpts, isAllowed, gitStatus, unexpectedChangesCount, getOld, getNew, getDiff, statusLines, _loop_1, statusLines_1, statusLines_1_1, statusLine, e_1_1;
         var e_1, _a;
         var _this = this;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
                     (0, core_1.debug)("Options:\n  sha: ".concat(options.sha, "\n  dir: ").concat(options.dir, "\n  ignoreNewFiles: ").concat(options.ignoreNewFiles, "\n  allowedChanges:\n    ").concat(options.allowedChanges.join("\n    ")));
+                    execOpts = { cwd: options.dir, silent: true };
                     isAllowed = (0, picomatch_1.default)(options.allowedChanges);
-                    gitStatus = (0, shelljs_1.exec)("git status --porcelain", { cwd: options.dir });
+                    gitStatus = (0, shelljs_1.exec)("git status --porcelain", execOpts);
                     unexpectedChangesCount = 0;
                     getOld = function (path) {
-                        return (0, shelljs_1.exec)("git show ".concat(options.sha, ":\"").concat(path, "\""), { cwd: options.dir })
-                            .stdout;
+                        return (0, shelljs_1.exec)("git show ".concat(options.sha, ":\"").concat(path, "\""), execOpts).stdout;
                     };
                     getNew = function (path) { return __awaiter(_this, void 0, void 0, function () {
                         return __generator(this, function (_a) {
@@ -38685,8 +38685,7 @@ function statusCheck(options) {
                         });
                     }); };
                     getDiff = function (path) {
-                        return (0, shelljs_1.exec)("git diff --no-ext-diff -p \"".concat(path, "\""), { cwd: options.dir })
-                            .stdout;
+                        return (0, shelljs_1.exec)("git diff --no-ext-diff -p \"".concat(path, "\""), execOpts).stdout;
                     };
                     statusLines = gitStatus.stdout.split("\n");
                     _loop_1 = function (statusLine) {

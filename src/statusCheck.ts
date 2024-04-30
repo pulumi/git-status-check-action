@@ -27,8 +27,9 @@ export async function statusCheck(
   allowedChanges:
     ${options.allowedChanges.join("\n    ")}`);
 
+  const execOpts = { cwd: options.dir, silent: true };
   const isAllowed = pm(options.allowedChanges);
-  const gitStatus = exec("git status --porcelain", { cwd: options.dir });
+  const gitStatus = exec("git status --porcelain", execOpts);
 
   let unexpectedChangesCount = 0;
   /* | HEAD | WORKDIR | STAGE | `git status --short` equivalent |
@@ -50,15 +51,13 @@ export async function statusCheck(
    * | 1    | 2       | 3     | `MM`                            |
    */
   const getOld = (path: string) => {
-    return exec(`git show ${options.sha}:"${path}"`, { cwd: options.dir })
-      .stdout;
+    return exec(`git show ${options.sha}:"${path}"`, execOpts).stdout;
   };
   const getNew = async (path: string) => {
     return fs.readFile(join(options.dir, path), "utf-8");
   };
   const getDiff = (path: string) => {
-    return exec(`git diff --no-ext-diff -p "${path}"`, { cwd: options.dir })
-      .stdout;
+    return exec(`git diff --no-ext-diff -p "${path}"`, execOpts).stdout;
   };
   const statusLines = gitStatus.stdout.split("\n");
   for (const statusLine of statusLines) {
