@@ -5,7 +5,7 @@ GitHub Action for checking the status of the working tree. If any files are untr
 ## Usage
 
 ```yaml
-- uses: pulumi/git-status-check@v1
+- uses: pulumi/git-status-check-action@v1
   with:
     # One of more globs to list files which are permitted 
     # to have uncommitted changes.
