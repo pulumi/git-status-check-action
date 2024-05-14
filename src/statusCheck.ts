@@ -80,11 +80,20 @@ export async function statusCheck(
     await group(statusLine, async () => {
       switch (modification) {
         case "added":
-          const newContent = await getNew(path);
-          options.alert("File added:\n" + newContent, {
-            file: path,
-            title: `Unexpected file added`,
-          });
+          const lstat = await fs.lstat(join(options.dir, path));
+          if (lstat.isDirectory()) {
+            const dirContent = await fs.readdir(join(options.dir, path));
+            options.alert("Directory added:\n" + dirContent.join("\n"), {
+              file: path,
+              title: `Unexpected directory added`,
+            });
+          } else {
+            const newContent = await getNew(path);
+            options.alert("File added:\n" + newContent, {
+              file: path,
+              title: `Unexpected file added`,
+            });
+          }
           break;
         case "deleted":
           // Deleted

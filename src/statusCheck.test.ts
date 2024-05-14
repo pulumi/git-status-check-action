@@ -12,7 +12,14 @@ describe("diffing", () => {
     await git.init({ fs, dir: tempDir });
     await fs.writeFile(`${tempDir}/a.txt`, originalContent, "utf-8");
     await fs.writeFile(`${tempDir}/.gitignore`, "ignored.txt\n");
-    await git.add({ fs, dir: tempDir, filepath: ["a.txt", ".gitignore"] });
+    await fs.mkdir(`${tempDir}/emptydir`);
+    await fs.mkdir(`${tempDir}/dir`);
+    await fs.writeFile(`${tempDir}/dir/nested.txt`, "Nested file");
+    await git.add({
+      fs,
+      dir: tempDir,
+      filepath: ["a.txt", ".gitignore", "dir/nested.txt"],
+    });
     const commitOp = await git.commit({
       fs,
       dir: tempDir,
@@ -126,6 +133,41 @@ describe("diffing", () => {
     });
     expect(unexpectedChangesCount).toBe(0);
     expect(alert).not.toHaveBeenCalled();
+  });
+  test("new directory", async () => {
+    const alert = jest.fn();
+    await fs.mkdir(`${tempDir}/newdir`);
+    await fs.writeFile(`${tempDir}/newdir/a.txt`, "Extra file");
+    // Run statusCheck
+    const unexpectedChangesCount = await statusCheck({
+      sha,
+      dir: tempDir,
+      allowedChanges: [],
+      ignoreNewFiles: false,
+      alert,
+    });
+    expect(unexpectedChangesCount).toBe(1);
+    expect(alert).toHaveBeenCalledWith("Directory added:\na.txt", {
+      file: "newdir/",
+      title: "Unexpected directory added",
+    });
+  });
+  test("deleted directory", async () => {
+    const alert = jest.fn();
+    await fs.rm(`${tempDir}/dir`, { recursive: true });
+    // Run statusCheck
+    const unexpectedChangesCount = await statusCheck({
+      sha,
+      dir: tempDir,
+      allowedChanges: [],
+      ignoreNewFiles: false,
+      alert,
+    });
+    expect(unexpectedChangesCount).toBe(1);
+    expect(alert).toHaveBeenCalledWith("File deleted:\nNested file", {
+      file: "dir/nested.txt",
+      title: "Unexpected file deleted",
+    });
   });
 });
 

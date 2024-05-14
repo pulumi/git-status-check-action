@@ -38710,40 +38710,53 @@ function statusCheck(options) {
                                         return [2 /*return*/, "continue"];
                                     }
                                     return [4 /*yield*/, (0, core_1.group)(statusLine, function () { return __awaiter(_this, void 0, void 0, function () {
-                                            var _a, newContent, oldFile, diff;
+                                            var _a, lstat, dirContent, newContent, oldFile, diff;
                                             return __generator(this, function (_b) {
                                                 switch (_b.label) {
                                                     case 0:
                                                         _a = modification;
                                                         switch (_a) {
                                                             case "added": return [3 /*break*/, 1];
-                                                            case "deleted": return [3 /*break*/, 3];
-                                                            case "modified": return [3 /*break*/, 4];
+                                                            case "deleted": return [3 /*break*/, 7];
+                                                            case "modified": return [3 /*break*/, 8];
                                                         }
-                                                        return [3 /*break*/, 5];
-                                                    case 1: return [4 /*yield*/, getNew(path)];
+                                                        return [3 /*break*/, 9];
+                                                    case 1: return [4 /*yield*/, fs_1.promises.lstat((0, path_1.join)(options.dir, path))];
                                                     case 2:
+                                                        lstat = _b.sent();
+                                                        if (!lstat.isDirectory()) return [3 /*break*/, 4];
+                                                        return [4 /*yield*/, fs_1.promises.readdir((0, path_1.join)(options.dir, path))];
+                                                    case 3:
+                                                        dirContent = _b.sent();
+                                                        options.alert("Directory added:\n" + dirContent.join("\n"), {
+                                                            file: path,
+                                                            title: "Unexpected directory added",
+                                                        });
+                                                        return [3 /*break*/, 6];
+                                                    case 4: return [4 /*yield*/, getNew(path)];
+                                                    case 5:
                                                         newContent = _b.sent();
                                                         options.alert("File added:\n" + newContent, {
                                                             file: path,
                                                             title: "Unexpected file added",
                                                         });
-                                                        return [3 /*break*/, 5];
-                                                    case 3:
+                                                        _b.label = 6;
+                                                    case 6: return [3 /*break*/, 9];
+                                                    case 7:
                                                         oldFile = getOld(path);
                                                         options.alert("File deleted:\n" + oldFile, {
                                                             file: path,
                                                             title: "Unexpected file deleted",
                                                         });
-                                                        return [3 /*break*/, 5];
-                                                    case 4:
+                                                        return [3 /*break*/, 9];
+                                                    case 8:
                                                         diff = getDiff(path);
                                                         options.alert("File modified:\n" + trimPatchHeader(diff), {
                                                             file: path,
                                                             title: "Unexpected file modified",
                                                         });
-                                                        return [3 /*break*/, 5];
-                                                    case 5:
+                                                        return [3 /*break*/, 9];
+                                                    case 9:
                                                         unexpectedChangesCount++;
                                                         return [2 /*return*/];
                                                 }
