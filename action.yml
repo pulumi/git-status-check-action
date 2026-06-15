@@ -19,5 +19,5 @@ outputs:
   unexpected-changes-count:
     description: 'The number of unexpected changes.'
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
